@@ -21,7 +21,9 @@
         </mat-icon>
 
     </mat-form-field>
-
+    <adf-search-panel [customModels]="customModels">
+        
+    </adf-search-panel>
     <adf-sites-dropdown
         *ngIf="showDropdownSiteList"
         class="full-width"
@@ -50,7 +52,7 @@
             </adf-dropdown-breadcrumb>
         </adf-toolbar-title>
     </adf-toolbar>
-
+    
     <div
         class="adf-content-node-selector-content-list"
         [class.adf-content-node-selector-content-list-searchLayout]="showingSearchResults"
