@@ -87,52 +87,52 @@ describe('Content Services Viewer', () => {
     const usersActions = new UsersActions(apiService);
     const uploadActions = new UploadActions(apiService);
 
-    describe('Unchanged file types', () => {
+    beforeAll(async () => {
+        await apiService.getInstance().login(browser.params.testConfig.admin.email, browser.params.testConfig.admin.password);
+        await usersActions.createUser(acsUser);
+        await apiService.getInstance().login(acsUser.email, acsUser.password);
 
-        beforeAll(async () => {
-            await apiService.getInstance().login(browser.params.testConfig.admin.email, browser.params.testConfig.admin.password);
-            await usersActions.createUser(acsUser);
-            await apiService.getInstance().login(acsUser.email, acsUser.password);
+        const pdfFileUploaded = await uploadActions.uploadFile(pdfFile.location, pdfFile.name, '-my-');
+        Object.assign(pdfFile, pdfFileUploaded.entry);
 
-            const pdfFileUploaded = await uploadActions.uploadFile(pdfFile.location, pdfFile.name, '-my-');
-            Object.assign(pdfFile, pdfFileUploaded.entry);
+        const protectedFileUploaded = await uploadActions.uploadFile(protectedFile.location, protectedFile.name, '-my-');
+        Object.assign(protectedFile, protectedFileUploaded.entry);
 
-            const protectedFileUploaded = await uploadActions.uploadFile(protectedFile.location, protectedFile.name, '-my-');
-            Object.assign(protectedFile, protectedFileUploaded.entry);
+        const docxFileUploaded = await uploadActions.uploadFile(docxFile.location, docxFile.name, '-my-');
+        Object.assign(docxFile, docxFileUploaded.entry);
 
-            const docxFileUploaded = await uploadActions.uploadFile(docxFile.location, docxFile.name, '-my-');
-            Object.assign(docxFile, docxFileUploaded.entry);
+        const jpgFileUploaded = await uploadActions.uploadFile(jpgFile.location, jpgFile.name, '-my-');
+        Object.assign(jpgFile, jpgFileUploaded.entry);
 
-            const jpgFileUploaded = await uploadActions.uploadFile(jpgFile.location, jpgFile.name, '-my-');
-            Object.assign(jpgFile, jpgFileUploaded.entry);
+        const mp4FileUploaded = await uploadActions.uploadFile(mp4File.location, mp4File.name, '-my-');
+        Object.assign(mp4File, mp4FileUploaded.entry);
 
-            const mp4FileUploaded = await uploadActions.uploadFile(mp4File.location, mp4File.name, '-my-');
-            Object.assign(mp4File, mp4FileUploaded.entry);
+        const pptFileUploaded = await uploadActions.uploadFile(pptFile.location, pptFile.name, '-my-');
+        Object.assign(pptFile, pptFileUploaded.entry);
 
-            const pptFileUploaded = await uploadActions.uploadFile(pptFile.location, pptFile.name, '-my-');
-            Object.assign(pptFile, pptFileUploaded.entry);
+        const unsupportedFileUploaded = await uploadActions.uploadFile(unsupportedFile.location, unsupportedFile.name, '-my-');
+        Object.assign(unsupportedFile, unsupportedFileUploaded.entry);
 
-            const unsupportedFileUploaded = await uploadActions.uploadFile(unsupportedFile.location, unsupportedFile.name, '-my-');
-            Object.assign(unsupportedFile, unsupportedFileUploaded.entry);
+        await loginPage.login(acsUser.email, acsUser.password);
+        await contentServicesPage.goToDocumentList();
+    });
 
-            await loginPage.login(acsUser.email, acsUser.password);
-            await contentServicesPage.goToDocumentList();
-        });
+    afterAll(async () => {
+        try {
+            await uploadActions.deleteFileOrFolder(pdfFile.getId());
+            await uploadActions.deleteFileOrFolder(protectedFile.getId());
+            await uploadActions.deleteFileOrFolder(docxFile.getId());
+            await uploadActions.deleteFileOrFolder(jpgFile.getId());
+            await uploadActions.deleteFileOrFolder(mp4File.getId());
+            await uploadActions.deleteFileOrFolder(pptFile.getId());
+            await uploadActions.deleteFileOrFolder(unsupportedFile.getId());
+            await navigationBarPage.clickLogoutButton();
+        } catch (error) {
+            throw new Error(`cleanup afterAll call failed with error ${error}`);
+        }
+    });
 
-        afterAll(async () => {
-            try {
-                await uploadActions.deleteFileOrFolder(pdfFile.getId());
-                await uploadActions.deleteFileOrFolder(protectedFile.getId());
-                await uploadActions.deleteFileOrFolder(docxFile.getId());
-                await uploadActions.deleteFileOrFolder(jpgFile.getId());
-                await uploadActions.deleteFileOrFolder(mp4File.getId());
-                await uploadActions.deleteFileOrFolder(pptFile.getId());
-                await uploadActions.deleteFileOrFolder(unsupportedFile.getId());
-                await navigationBarPage.clickLogoutButton();
-            } catch (error) {
-                throw new Error(`cleanup afterAll call failed with error ${error}`);
-            }
-        });
+    describe('Unchanged  versions file types', () => {
 
         it('[C260038] Should display first page, toolbar and pagination when opening a .pdf file', async () => {
             await contentServicesPage.checkAcsContainer();
@@ -421,79 +421,52 @@ describe('Content Services Viewer', () => {
             await viewerPage.clickClosePasswordDialog();
             await contentServicesPage.checkContentIsDisplayed(protectedFile.name);
         });
+
+        describe('Viewer - version update with unsupported file', () => {
+            it('[C587084] Should display the preview for an unsupported file', async () => {
+                await changeFileNameInViewer(unsupportedFile.name, 'generic-unsupported-file-1st.3DS');
+                await uploadNewVersion(jpgFile.name, unsupportedFileByLocation.location);
+                await previewUnsupportedFile(unsupportedFileByLocation.name);
+
+                await changeFileNameInViewer(unsupportedFileByLocation.name, 'generic-unsupported-file-2nd.3DS');
+                await uploadNewVersion(pdfFile.name, unsupportedFileByLocation.location);
+                await previewUnsupportedFile(unsupportedFileByLocation.name);
+
+                await changeFileNameInViewer(unsupportedFileByLocation.name, 'generic-unsupported-file-3rd.3DS');
+                await uploadNewVersion(mp4File.name, unsupportedFileByLocation.location);
+                await previewUnsupportedFile(unsupportedFileByLocation.name);
+            });
+        });
+
     });
 
-    describe('Viewer - version update with unsupported file', () => {
-        beforeAll(async () => {
-            await apiService.getInstance().login(browser.params.testConfig.admin.email, browser.params.testConfig.admin.password);
-            await usersActions.createUser(acsUser);
-            await apiService.getInstance().login(acsUser.email, acsUser.password);
-
-            const pdfFileUploaded = await uploadActions.uploadFile(pdfFile.location, pdfFile.name, '-my-');
-            Object.assign(pdfFile, pdfFileUploaded.entry);
-
-            const jpgFileUploaded = await uploadActions.uploadFile(jpgFile.location, jpgFile.name, '-my-');
-            Object.assign(jpgFile, jpgFileUploaded.entry);
-
-            const mp4FileUploaded = await uploadActions.uploadFile(mp4File.location, mp4File.name, '-my-');
-            Object.assign(mp4File, mp4FileUploaded.entry);
-
-            await loginPage.login(acsUser.email, acsUser.password);
-            await contentServicesPage.goToDocumentList();
-        });
-
-        afterAll(async () => {
-            try {
-                await uploadActions.deleteFileOrFolder(pdfFile.getId());
-                await uploadActions.deleteFileOrFolder(jpgFile.getId());
-                await uploadActions.deleteFileOrFolder(mp4File.getId());
-                await navigationBarPage.clickLogoutButton();
-            } catch (error) {
-                throw new Error(`cleanup afterAll call failed with error ${error}`);
-            }
-        });
-
-        it('[C587084] Should display the preview for an unsupported file', async () => {
-            await uploadNewVersion(jpgFile.name, unsupportedFileByLocation.location);
-            await previewUnsupportedFile(unsupportedFileByLocation.name);
-
-            await changeFileNameInViewer(unsupportedFileByLocation.name, 'generic-unsupported-file-2nd.3DS');
-            await uploadNewVersion(pdfFile.name, unsupportedFileByLocation.location);
-            await previewUnsupportedFile(unsupportedFileByLocation.name);
-
-            await changeFileNameInViewer(unsupportedFileByLocation.name, 'generic-unsupported-file-3rd.3DS');
-            await uploadNewVersion(mp4File.name, unsupportedFileByLocation.location);
-            await previewUnsupportedFile(unsupportedFileByLocation.name);
-        });
-
-        async function uploadNewVersion(originalFileName: string, newVersionLocation: string): Promise<void> {
-            await viewerPage.viewFile(originalFileName);
-            await viewerPage.clickCloseButton();
-            await contentServicesPage.versionManagerContent(originalFileName);
-            await BrowserActions.click(versionManagePage.showNewVersionButton);
-            await versionManagePage.uploadNewVersionFile(newVersionLocation);
-            await versionManagePage.clickActionButton('1.1');
-            await versionManagePage.checkActionsArePresent('1.1');
-            await versionManagePage.closeActionsMenu();
-            await versionManagePage.closeVersionDialog();
-            await browser.refresh();
-        }
-        async function previewUnsupportedFile(unsupportedFileName: string): Promise<void> {
-            await viewerPage.viewFile(unsupportedFileName);
-            await viewerPage.checkUnknownFormatIsDisplayed();
-            await expect(await viewerPage.getUnknownFormatMessage()).toBe('Couldn\'t load preview. Unknown format.');
-            await viewerPage.clickCloseButton();
-        }
-        async function changeFileNameInViewer(fileName: string, newName: string): Promise<void> {
-            await viewerPage.viewFile(fileName);
-            await viewerPage.clickInfoButton();
-            await viewerPage.checkInfoSideBarIsDisplayed();
-            await viewerPage.clickOnTab('Properties');
-            await viewerPage.checkTabIsActive('Properties');
-            await metadataViewPage.editIconClick();
-            await  metadataViewPage.enterPropertyText('name', newName);
-            await metadataViewPage.clickSaveMetadata();
-            await viewerPage.clickCloseButton();
-        }
-    });
+    async function uploadNewVersion(originalFileName: string, newVersionLocation: string): Promise<void> {
+        await viewerPage.viewFile(originalFileName);
+        await viewerPage.clickCloseButton();
+        await contentServicesPage.versionManagerContent(originalFileName);
+        await BrowserActions.click(versionManagePage.showNewVersionButton);
+        await versionManagePage.uploadNewVersionFile(newVersionLocation);
+        await versionManagePage.clickActionButton('1.1');
+        await versionManagePage.checkActionsArePresent('1.1');
+        await versionManagePage.closeActionsMenu();
+        await versionManagePage.closeVersionDialog();
+        await browser.refresh();
+    }
+    async function previewUnsupportedFile(unsupportedFileName: string): Promise<void> {
+        await viewerPage.viewFile(unsupportedFileName);
+        await viewerPage.checkUnknownFormatIsDisplayed();
+        await expect(await viewerPage.getUnknownFormatMessage()).toBe('Couldn\'t load preview. Unknown format.');
+        await viewerPage.clickCloseButton();
+    }
+    async function changeFileNameInViewer(fileName: string, newName: string): Promise<void> {
+        await viewerPage.viewFile(fileName);
+        await viewerPage.clickInfoButton();
+        await viewerPage.checkInfoSideBarIsDisplayed();
+        await viewerPage.clickOnTab('Properties');
+        await viewerPage.checkTabIsActive('Properties');
+        await metadataViewPage.editIconClick();
+        await metadataViewPage.enterPropertyText('name', newName);
+        await metadataViewPage.clickSaveMetadata();
+        await viewerPage.clickCloseButton();
+    }
 });
