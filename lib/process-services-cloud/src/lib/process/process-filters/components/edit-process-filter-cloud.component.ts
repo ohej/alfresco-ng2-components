@@ -610,6 +610,19 @@ export class EditProcessFilterCloudComponent implements OnInit, OnChanges, OnDes
                 key: 'order',
                 value: currentProcessFilter.order || this.directions[0].value,
                 options: this.directions
+            }),
+            new ProcessFilterProperties({
+                label: 'ADF_CLOUD_EDIT_PROCESS_FILTER.LABEL.COMPLETED_DATE',
+                type: 'date',
+                key: 'completedDate',
+                value: currentProcessFilter.completedDate || false
+            }),
+            new ProcessFilterProperties({
+                label: 'ADF_CLOUD_EDIT_PROCESS_FILTER.LABEL.COMPLETED_DATE',
+                type: 'date-range',
+                key: 'completedDateRange',
+                rangeKeys: { from: 'completedFrom', to: 'completedTo'},
+                value: currentProcessFilter.completedDate || false
             })
         ];
     }
