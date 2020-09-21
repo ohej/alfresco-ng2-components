@@ -32,6 +32,7 @@ import { ProcessFilterDialogCloudComponent } from './process-filter-dialog-cloud
 import { ApplicationInstanceModel } from '../../../app/models/application-instance.model';
 import { ProcessCloudService } from '../../services/process-cloud.service';
 import { ProcessDefinitionCloud } from '../../../models/process-definition-cloud.model';
+import { DateRangeFilter } from '../../../models/date-cloud-filter.model';
 
 @Component({
     selector: 'adf-cloud-edit-process-filter',
@@ -164,7 +165,14 @@ export class EditProcessFilterCloudComponent implements OnInit, OnChanges, OnDes
 
     getFormControlsConfig(processFilterProperties: ProcessFilterProperties[]): any {
         const properties = processFilterProperties.map((property: ProcessFilterProperties) => {
-            return { [property.key]: property.value };
+            if (!property.rangeKeys) {
+                return { [property.key]: property.value };
+            } else {
+                return {
+                    [property.rangeKeys.from]: property.value[property.rangeKeys.from],
+                    [property.rangeKeys.to]: property.value[property.rangeKeys.to]
+                };
+            }
         });
         return properties.reduce(((result, current) => Object.assign(result, current)), {});
     }
@@ -309,6 +317,15 @@ export class EditProcessFilterCloudComponent implements OnInit, OnChanges, OnDes
         }
     }
 
+    onDateRangeFilterChanged(dateRange: DateRangeFilter, property: ProcessFilterProperties) {
+        this.editProcessFilterForm.get(property.rangeKeys.from).setValue(
+            dateRange.startDate ? dateRange.startDate.toISOString() : null
+        );
+        this.editProcessFilterForm.get(property.rangeKeys.to).setValue(
+            dateRange.endDate ? dateRange.endDate.toISOString() : null
+        );
+    }
+
     hasError(property: ProcessFilterProperties): boolean {
         return this.getPropertyController(property).errors && this.getPropertyController(property).errors.invalid;
     }
@@ -450,6 +467,10 @@ export class EditProcessFilterCloudComponent implements OnInit, OnChanges, OnDes
 
     isDateType(property: ProcessFilterProperties): boolean {
         return property.type === 'date';
+    }
+
+    isDateRangeType(property: ProcessFilterProperties): boolean {
+        return property.type === 'date-range';
     }
 
     isSelectType(property: ProcessFilterProperties): boolean {
@@ -626,5 +647,4 @@ export class EditProcessFilterCloudComponent implements OnInit, OnChanges, OnDes
             })
         ];
     }
-
 }
